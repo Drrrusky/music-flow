@@ -30,6 +30,12 @@ jobs:
             Copy-Item -LiteralPath $_.FullName -Destination $PWD -Recurse -Force
           }
 
+          # Fix compatibility issues in the uploaded v0.2.1 source.
+          $iconButton = "src/ui/IconButton.tsx"
+          (Get-Content $iconButton -Raw).Replace("'onAnimationStart'>", "'onAnimationStart' | 'style'>") | Set-Content $iconButton -NoNewline
+          $capability = "src-tauri/capabilities/default.json"
+          (Get-Content $capability -Raw).Replace('    "fs:allow-close",' + [Environment]::NewLine, '') | Set-Content $capability -NoNewline
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
