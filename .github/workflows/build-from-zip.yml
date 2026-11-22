@@ -34,7 +34,9 @@ jobs:
           $iconButton = "src/ui/IconButton.tsx"
           (Get-Content $iconButton -Raw).Replace("'onAnimationStart'>", "'onAnimationStart' | 'style'>") | Set-Content $iconButton -NoNewline
           $capability = "src-tauri/capabilities/default.json"
-          (Get-Content $capability -Raw).Replace('    "fs:allow-close",' + [Environment]::NewLine, '') | Set-Content $capability -NoNewline
+          $capabilityText = Get-Content $capability -Raw
+          $capabilityText = $capabilityText -replace '(?m)^\s*"fs:allow-close",\r?\n', ''
+          Set-Content -Path $capability -Value $capabilityText -NoNewline
 
       - uses: actions/setup-node@v4
         with:
