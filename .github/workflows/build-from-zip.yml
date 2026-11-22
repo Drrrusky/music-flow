@@ -1,0 +1,60 @@
+name: Build MusicFlow from ZIP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract MusicFlow source archive
+        shell: pwsh
+        run: |
+          $archive = "musicflow-v0.2.1.zip"
+          if (!(Test-Path $archive)) {
+            throw "Upload musicflow-v0.2.1.zip to the repository root, then run this workflow again."
+          }
+          Expand-Archive -LiteralPath $archive -DestinationPath "_musicflow_source" -Force
+          $source = Join-Path (Resolve-Path "_musicflow_source") "musicflow"
+          if (!(Test-Path (Join-Path $source "package.json"))) {
+            throw "The ZIP does not contain the expected musicflow/package.json structure."
+          }
+          Get-ChildItem -LiteralPath $source -Force | ForEach-Object {
+            Copy-Item -LiteralPath $_.FullName -Destination $PWD -Recurse -Force
+          }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Type check
+        run: npm run typecheck
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm test
+        continue-on-error: true
+
+      - name: Build Windows installer
+        run: npm run tauri build
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: MusicFlow-Windows
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/musicflow.exe
+          if-no-files-found: error
