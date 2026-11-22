@@ -2,6 +2,10 @@ name: Build MusicFlow from ZIP
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "musicflow-v0.2.1.zip"
+      - ".github/workflows/build-from-zip.yml"
 
 jobs:
   build:
